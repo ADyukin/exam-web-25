@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <a href="{{ url_for('events.index') }}" class="btn btn-secondary">Назад</a>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-8">
+            <h1 class="mb-4">{{ event['title'] }}</h1>
+            
+            {% if event['image_filename'] %}
+            <img src="{{ url_for('uploaded_file', filename=event['image_filename']) }}" 
+                 class="img-fluid rounded mb-4" alt="{{ event['title'] }}">
+            {% endif %}
+            
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Описание</h5>
+                    <p class="card-text">{{ event['description'] | markdown | safe }}</p>
+                </div>
+            </div>
+            
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Дата</h5>
+                            <p class="card-text">{{ event['event_date'].strftime('%d.%m.%Y') }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Место проведения</h5>
+                            <p class="card-text">{{ event['location'] }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Требуется волонтёров</h5>
+                    <p class="card-text">{{ event['required_volunteers'] }}</p>
+                </div>
+            </div>
+
+            {% if current_user.is_authenticated and current_user.role_name in ['administrator', 'moderator'] %}
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Зарегистрированные волонтеры ({{ volunteers|length }})</h5>
+                    {% if volunteers %}
+                        <ul class="list-group list-group-flush">
+                            {% for volunteer in volunteers %}
+                                <li class="list-group-item">
+                                    <strong>{{ volunteer.last_name }} {{ volunteer.first_name }} {{ volunteer.middle_name or '' }}</strong><br>
+                                    <small class="text-muted">Контакт: {{ volunteer.contact_info }}</small><br>
+                                    <small class="text-muted">Дата регистрации: {{ volunteer.registration_date.strftime('%d.%m.%Y %H:%M') }}</small>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-muted">Нет зарегистрированных волонтеров.</p>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if current_user.is_authenticated and current_user.role_name == 'moderator' and pending_volunteers %}
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Ожидают подтверждения ({{ pending_volunteers|length }})</h5>
+                     <ul class="list-group list-group-flush">
+                        {% for volunteer in pending_volunteers %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{{ volunteer.last_name }} {{ volunteer.first_name }} {{ volunteer.middle_name or '' }}</strong><br>
+                                    <small class="text-muted">Контакт: {{ volunteer.contact_info }}</small><br>
+                                    <small class="text-muted">Дата регистрации: {{ volunteer.registration_date.strftime('%d.%m.%Y %H:%M') }}</small>
+                                </div>
+                                <div>
+                                    <form action="{{ url_for('events.accept_volunteer', event_id=event['id'], volunteer_id=volunteer.id) }}" method="POST" class="d-inline">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="btn btn-success btn-sm">Принять</button>
+                                    </form>
+                                    <form action="{{ url_for('events.reject_volunteer', event_id=event['id'], volunteer_id=volunteer.id) }}" method="POST" class="d-inline">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="btn btn-danger btn-sm">Отклонить</button>
+                                    </form>
+                                </div>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="col-md-4">
+            {% if current_user.is_authenticated and current_user.role_name == 'user' %}
+                {% if not user_registration %}
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">Стать волонтёром</h5>
+                            <button type="button" class="btn btn-primary" id="registerBtn"
+                                    data-register-url="{{ url_for('events.register', event_id=event.id) }}"
+                                    data-csrf-token="{{ csrf_token() }}">
+                                Зарегистрироваться
+                            </button>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">Вы зарегистрированы</h5>
+                            <p class="card-text">
+                                <strong>Статус:</strong> 
+                                {% if user_registration.status == 'accepted' %}
+                                    <span class="badge bg-success">Принята</span>
+                                {% elif user_registration.status == 'rejected' %}
+                                    <span class="badge bg-danger">Отклонена</span>
+                                {% else %}
+                                    <span class="badge bg-warning">На рассмотрении</span>
+                                {% endif %}
+                                <br>
+                                <strong>Дата подачи:</strong> {{ user_registration.registration_date.strftime('%d.%m.%Y %H:%M') }}<br>
+                                <strong>Контактная информация:</strong> {{ user_registration.contact_info }}
+                            </p>
+                        </div>
+                    </div>
+                {% endif %}
+            {% endif %}
+            
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ url_for('static', filename='js/modal.js') }}"></script>
+{% endblock %}

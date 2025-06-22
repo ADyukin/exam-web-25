@@ -1,0 +1,43 @@
+{% macro render_form_fields(form) %}
+    {{ form.hidden_tag() }}
+
+    <div class="mb-3">
+        {{ form.title.label(class="form-label") }}
+        {{ form.title(class="form-control" + (" is-invalid" if form.title.errors else "")) }}
+        {% for error in form.title.errors %}
+            <div class="invalid-feedback">{{ error }}</div>
+        {% endfor %}
+    </div>
+
+    <div class="mb-3">
+        {{ form.description.label(class="form-label") }}
+        <textarea id="markdown-editor" name="description" class="form-control">{{ form.description.data or '' }}</textarea>
+        {% for error in form.description.errors %}
+            <div class="invalid-feedback d-block">{{ error }}</div>
+        {% endfor %}
+    </div>
+
+    <div class="mb-3">
+        {{ form.date.label(class="form-label") }}
+        {{ form.date(class="form-control" + (" is-invalid" if form.date.errors else "")) }}
+         {% for error in form.date.errors %}
+            <div class="invalid-feedback">{{ error }}</div>
+        {% endfor %}
+    </div>
+
+    <div class="mb-3">
+        {{ form.location.label(class="form-label") }}
+        {{ form.location(class="form-control" + (" is-invalid" if form.location.errors else "")) }}
+        {% for error in form.location.errors %}
+            <div class="invalid-feedback">{{ error }}</div>
+        {% endfor %}
+    </div>
+
+    <div class="mb-3">
+        {{ form.required_volunteers.label(class="form-label") }}
+        {{ form.required_volunteers(class="form-control" + (" is-invalid" if form.required_volunteers.errors else "")) }}
+        {% for error in form.required_volunteers.errors %}
+            <div class="invalid-feedback">{{ error }}</div>
+        {% endfor %}
+    </div>
+{% endmacro %} 
